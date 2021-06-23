@@ -8,3 +8,4 @@ srmtool
 *.log
 .tmp
 .vpetest*
+.*.swp
