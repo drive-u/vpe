@@ -74,7 +74,6 @@ Here VPE Plugin for FFmpeg is supported and to be extended to GStreamer and othe
 ```
 ├── build                         Configure files for building
 ├── drivers                       The linux driver
-├── firmware                      The firmware for VeriSilicon Platform
 ├── sdk_inc                       VeriSilicon Platform Codec SDK header files
 ├── sdk_libs                      VeriSilicon Platform Codec SDK libraries
 └── vpi                           VeriSilicon Platform Interfaces source code
@@ -113,7 +112,7 @@ outpath=
 Create VPE build config file successfully!
 ```
 
-## 2. Build
+## 2. Build VPE
 ```bash
 $make
 VPE build step - build VPI
@@ -129,7 +128,7 @@ make[1]: Leaving directory `/home/gyzhang/work/spsd/vpe/drivers/transcoder-pcie'
 Build release VPE
 ```
 
-## 3. Install
+## 3. Install VPE
 ```bash
 $sudo make install
 VPE build step - install
@@ -146,12 +145,12 @@ cp drivers/transcoder-pcie/transcoder_pcie.ko "/lib/modules/4.19.106/kernel/driv
 depmod
 VPE installation finished!
 ```
-
-## 4. Uninstall
+## 4. Build and install driver
 ```bash
-$sudo make uninstall
-VPE build step - uninstall
-/sbin/ldconfig
-depmod
-VPE uninstallation finished!
+$sudo make drivers
+make -C drivers clean all install
+make -C /lib/modules/4.19.106/build M=`pwd` clean
+...
+VPE Driver is already installed, removing...
+VPE Driver: transcoder_pcie       139264  0
 ```

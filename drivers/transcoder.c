@@ -29,7 +29,7 @@
 #include "transcoder.h"
 
 #define description_string	"transcoder driver"
-#define version_string		"2.54"
+#define version_string		"2.55"
 
 #define FB_VENDOR_ID		0x1d9b
 #define FB_DEVICE_ID		0xface

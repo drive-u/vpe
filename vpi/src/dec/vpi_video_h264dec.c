@@ -1048,6 +1048,7 @@ int vpi_decode_h264_dec_process(VpiDecCtx *vpi_ctx)
         }
     }
 
+    VPILOGD("decoding stream size %d\n", vpi_ctx->h264_dec_input.data_len);
     do {
         ret = vpi_decode_h264_frame_decoding(vpi_ctx);
 
@@ -1064,7 +1065,6 @@ int vpi_decode_h264_dec_process(VpiDecCtx *vpi_ctx)
             break;
         }
     } while(vpi_ctx->h264_dec_output.data_left);
-    VPILOGD("decoding stream size %d\n", vpi_ctx->h264_dec_input.data_len);
 
     if (ret != 0) {
         VPILOGE("H264 decoding failure\n");

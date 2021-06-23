@@ -541,7 +541,7 @@ static struct ip_info *get_spcecific_ip(struct misc_ip *ip_dev,
 
 	switch (ipdesc.ip_id) {
 	case VC8000D_ID:
-		if (core_id > VC8000D_CORES)
+		if (core_id >= VC8000D_CORES)
 			trans_dbg(ip_dev->tdev, TR_ERR,
 				"misc_ip: %s ip_id:%d, core id:%d error.\n",
 				__func__, ipdesc.ip_id, core_id);
@@ -549,7 +549,7 @@ static struct ip_info *get_spcecific_ip(struct misc_ip *ip_dev,
 			ipinfo = &ip_dev->vc8000d[core_id];
 		break;
 	case VC8000E_ID:
-		if (core_id > VC8000E_CORES)
+		if (core_id >= VC8000E_CORES)
 			trans_dbg(ip_dev->tdev, TR_ERR,
 				"misc_ip: %s ip_id:%d, core id:%d error.\n",
 				__func__, ipdesc.ip_id, core_id);
@@ -557,7 +557,7 @@ static struct ip_info *get_spcecific_ip(struct misc_ip *ip_dev,
 			ipinfo = &ip_dev->vc8000e[core_id];
 		break;
 	case BIGSEA_ID:
-		if (core_id > BIGSEA_CORES)
+		if (core_id >= BIGSEA_CORES)
 			trans_dbg(ip_dev->tdev, TR_ERR,
 				"misc_ip: %s ip_id:%d, core id:%d error.\n",
 				__func__, ipdesc.ip_id, core_id);
@@ -565,7 +565,7 @@ static struct ip_info *get_spcecific_ip(struct misc_ip *ip_dev,
 			ipinfo = &ip_dev->bigsea[core_id];
 		break;
 	case L2CACH_VCD_ID:
-		if (core_id > L2CACH_VCD_CORES)
+		if (core_id >= L2CACH_VCD_CORES)
 			trans_dbg(ip_dev->tdev, TR_ERR,
 				"misc_ip: %s ip_id:%d, core id:%d error.\n",
 				__func__, ipdesc.ip_id, core_id);
@@ -573,7 +573,7 @@ static struct ip_info *get_spcecific_ip(struct misc_ip *ip_dev,
 			ipinfo = &ip_dev->l2cach_vcd[core_id];
 		break;
 	case L2CACH_VCE_ID:
-		if (core_id > L2CACH_VCE_CORES)
+		if (core_id >= L2CACH_VCE_CORES)
 			trans_dbg(ip_dev->tdev, TR_ERR,
 				"misc_ip: %s ip_id:%d, core id:%d error.\n",
 				__func__, ipdesc.ip_id, core_id);
@@ -581,7 +581,7 @@ static struct ip_info *get_spcecific_ip(struct misc_ip *ip_dev,
 			ipinfo = &ip_dev->l2cach_vce[core_id];
 		break;
 	case F1_ID:
-		if (core_id > F1_CORES)
+		if (core_id >= F1_CORES)
 			trans_dbg(ip_dev->tdev, TR_ERR,
 				"misc_ip: %s ip_id:%d, core id:%d error.\n",
 				__func__, ipdesc.ip_id, core_id);
@@ -589,7 +589,7 @@ static struct ip_info *get_spcecific_ip(struct misc_ip *ip_dev,
 			ipinfo = &ip_dev->f1[core_id];
 		break;
 	case F2_ID:
-		if (core_id > F2_CORES)
+		if (core_id >= F2_CORES)
 			trans_dbg(ip_dev->tdev, TR_ERR,
 				"misc_ip: %s ip_id:%d, core id:%d error.\n",
 				__func__, ipdesc.ip_id, core_id);
@@ -597,7 +597,7 @@ static struct ip_info *get_spcecific_ip(struct misc_ip *ip_dev,
 			ipinfo = &ip_dev->f2[core_id];
 		break;
 	case F3_ID:
-		if (core_id > F3_CORES)
+		if (core_id >= F3_CORES)
 			trans_dbg(ip_dev->tdev, TR_ERR,
 				"misc_ip: %s ip_id:%d, core id:%d error.\n",
 				__func__, ipdesc.ip_id, core_id);
@@ -605,7 +605,7 @@ static struct ip_info *get_spcecific_ip(struct misc_ip *ip_dev,
 			ipinfo = &ip_dev->f3[core_id];
 		break;
 	case F4_TCACH_ID:
-		if (core_id > F4_TCACH_CORES)
+		if (core_id >= F4_TCACH_CORES)
 			trans_dbg(ip_dev->tdev, TR_ERR,
 				"misc_ip: %s ip_id:%d, core id:%d error.\n",
 				__func__, ipdesc.ip_id, core_id);
@@ -613,7 +613,7 @@ static struct ip_info *get_spcecific_ip(struct misc_ip *ip_dev,
 			ipinfo = &ip_dev->f4_tcach[core_id];
 		break;
 	case F4_DTRC_ID:
-		if (core_id > F4_DTRC_CORES)
+		if (core_id >= F4_DTRC_CORES)
 			trans_dbg(ip_dev->tdev, TR_ERR,
 				"misc_ip: %s ip_id:%d, core id:%d error.\n",
 				__func__, ipdesc.ip_id, core_id);
@@ -621,7 +621,7 @@ static struct ip_info *get_spcecific_ip(struct misc_ip *ip_dev,
 			ipinfo = &ip_dev->f4_dtrc[core_id];
 		break;
 	case F4_L2CACHE_ID:
-		if (core_id > F4_L2CACHE_CORES)
+		if (core_id >= F4_L2CACHE_CORES)
 			trans_dbg(ip_dev->tdev, TR_ERR,
 				"misc_ip: %s ip_id:%d, core id:%d error.\n",
 				__func__, ipdesc.ip_id, core_id);

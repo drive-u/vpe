@@ -61,6 +61,8 @@
 #define HUGE_PGAE_SIZE (2 * 1024 * 1024)
 #define NUM_OUT 1
 
+#define MAX_MEM_CHUNK_SIZE 9000 * 4096
+
 extern u32 dec_pp_in_blk_size;
 static struct TBCfg tb_cfg;
 
@@ -1190,7 +1192,11 @@ static int pp_buf_init(PPClient *pp, int one_channel)
 #ifdef SUPPORT_RESOLUTION_CHANGE
     if (one_channel == 1) {
         // for one original res, add one channel for res change
-        pp->out_buf_size *= 2;
+        if (pp->out_buf_size < (MAX_MEM_CHUNK_SIZE / 2)) {
+            pp->out_buf_size *= 2;
+        } else {
+            VPILOGD("pp buffer size %d too large\n", pp->out_buf_size);
+        }
     }
 #endif
 
@@ -3087,6 +3093,8 @@ VpiRet vpi_prc_pp_process(VpiPrcCtx *vpi_ctx, void *indata, void *outdata)
     pp_get_next_pic(pp, &dec_picture);
     pp_print_dec_picture(&dec_picture, decode_pic_num++);
     ret = pp_output_frame(filter, output, &dec_picture);
+    output->pts     = input->pts;
+    output->pkt_dts = input->pkt_dts;
 
     if (filter->b_disable_tcache == 1) {
         // release vpi_frame from hwupload

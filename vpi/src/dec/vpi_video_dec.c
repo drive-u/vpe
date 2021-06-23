@@ -169,11 +169,10 @@ static VpiRet vpi_dec_init_decoder(VpiDecCtx *vpi_ctx, void *cfg)
             return VPI_ERR_DECODER_INIT;
         }
     }
-    if (vpi_ctx->enable_mc) {
-        size = 4096 * 1165;
+    if (vpi_ctx->src_width >= 1920 || vpi_ctx->src_height >= 1080) {
+        size = 0x200000;
     } else {
-        //size = vpi_ctx->max_strm_len;
-        size = 1 * 1024 * 1024;
+        size = vpi_ctx->src_width * vpi_ctx->src_height;
     }
 
     for (i = 0; i < vpi_ctx->allocated_buffers; i++) {

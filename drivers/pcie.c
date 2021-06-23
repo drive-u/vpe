@@ -78,6 +78,43 @@ static inline unsigned int pcie_read(struct cb_tranx_t *tdev,
 	return readl((off)+(tdev->bar0_virt));
 }
 
+#ifdef LS1046A
+static inline unsigned long pcie_read64(struct cb_tranx_t *tdev,
+					unsigned int off)
+{
+	return readq((off)+(tdev->bar0_virt));
+}
+
+static void pcie_dump(struct cb_tranx_t *tdev,unsigned int st,int num) {
+	int i;
+	unsigned int off;
+	unsigned int data;
+	off = st;
+	for (i=0; i<num; i++) {
+		data = pcie_read(tdev,off);
+		printk("%08x ",data);
+		off = off + 4;
+		if ((i+1)%4 == 0) printk("\n");
+	}
+	printk("\n");
+}
+/*
+static void pcie_dump64(struct cb_tranx_t *tdev,unsigned int st,int num) {
+	int i;
+	unsigned int off;
+	unsigned long data;
+	off = st;
+	for (i=0; i<num; i++) {
+		data = pcie_read64(tdev,off);
+		printk("%016lx ",data);
+		off = off + 8;
+		if ((i+1)%2 == 0) printk("\n");
+	}
+	printk("\n");
+}
+*/
+#endif
+
 static ssize_t link_status_show(struct device *dev,
 				     struct device_attribute *attr,
 				     char *buf)
@@ -166,6 +203,10 @@ int cb_pci_init(struct cb_tranx_t *tdev)
 	int ret, i;
 	resource_size_t bar4_base, bar2_base, bar0_base;
 	u32 bar4_len, bar2_len;
+#ifdef LS1046A
+	struct pci_bus_region bus_addr;
+	struct pci_bus_region bus_addr4;
+#endif 
 
 	ret = pci_enable_device(tdev->pdev);
 	if (ret) {
@@ -200,55 +241,114 @@ int cb_pci_init(struct cb_tranx_t *tdev)
 	bar2_len = pci_resource_len(tdev->pdev, 2);
 	bar4_base = pci_resource_start(tdev->pdev, 4);
 	bar4_len = pci_resource_len(tdev->pdev, 4);
+#ifdef LS1046A
+	pcibios_resource_to_bus(tdev->pdev->bus, &bus_addr, &tdev->pdev->resource[2]);
+	printk("BAR2 bus addr:%016llx\n",bus_addr.start);
+	printk("bar2_base:%016llx\n",bar2_base);
+	pcibios_resource_to_bus(tdev->pdev->bus, &bus_addr4, &tdev->pdev->resource[4]);
+	printk("BAR4 bus addr:%016llx\n",bus_addr4.start);
+	printk("bar4_base:%016llx\n",bar4_base);
+#endif
 
 	tdev->bar0_virt = ioremap_nocache(bar0_base, BAR_PCIE_MAPPING_SIZE);
 	if (!tdev->bar0_virt) {
 		trans_dbg(tdev, TR_ERR, "pcie: ioremap bar0 failed.\n");
 		goto out_disable_err_report;
 	}
+#ifdef LS1046A
+	printk("ioremap %p\n",tdev->bar0_virt);
+#endif
 	/* map hardware to bar2(region 2) */
 	pcie_write(tdev, IATU_REGION_CTRL_2_OFF(0), 0x0);
 	pcie_write(tdev, IATU_REGION_CTRL_1_OFF(0), 0x0);
+#ifdef LS1046A
+	pcie_write(tdev, IATU_LWR_BASE_ADDR_OFF(0), QWORD_LO(bus_addr.start));
+	pcie_write(tdev, IATU_UPPER_BASE_ADDR_OFF(0), QWORD_HI(bus_addr.start));
+	pcie_write(tdev, IATU_LIMIT_ADDR_OFF(0),
+			(QWORD_LO(bus_addr.start) + DDR_CON_OFF - 1));
+#else
 	pcie_write(tdev, IATU_LWR_BASE_ADDR_OFF(0), QWORD_LO(bar2_base));
 	pcie_write(tdev, IATU_UPPER_BASE_ADDR_OFF(0), QWORD_HI(bar2_base));
 	pcie_write(tdev, IATU_LIMIT_ADDR_OFF(0),
-		   (QWORD_LO(bar2_base) + DDR_CON_OFF - 1));
+			(QWORD_LO(bar2_base) + DDR_CON_OFF - 1));
+#endif 
 	pcie_write(tdev, IATU_LWR_TARGET_ADDR_OFF(0), PCIE_CON_BASE_L_ADDR);
 	pcie_write(tdev, IATU_UPPER_TARGET_ADDR_OFF(0), IPS_H_ADDR);
 	pcie_write(tdev, IATU_REGION_CTRL_2_OFF(0), REGION_ENABLE);
+#ifdef LS1046A
+	printk("dump ATU_CAP 0\n");
+	pcie_dump(tdev,IATU_REGION_CTRL_1_OFF(0),8);
+	//pcie_dump64(tdev,IATU_REGION_CTRL_1_OFF(0),4);	
+#endif
 
 	pcie_write(tdev, IATU_REGION_CTRL_2_OFF(1), 0x0);
 	pcie_write(tdev, IATU_REGION_CTRL_1_OFF(1), 0x0);
+#ifdef LS1046A
+	pcie_write(tdev, IATU_LWR_BASE_ADDR_OFF(1),
+		   QWORD_LO(bus_addr.start) + DDR_CON_OFF);
+	pcie_write(tdev, IATU_UPPER_BASE_ADDR_OFF(1), QWORD_HI(bus_addr.start));
+	pcie_write(tdev, IATU_LIMIT_ADDR_OFF(1),
+		   (QWORD_LO(bus_addr.start) + OTHER_IPS_CON_OFF - 1));
+#else
 	pcie_write(tdev, IATU_LWR_BASE_ADDR_OFF(1),
 		   QWORD_LO(bar2_base) + DDR_CON_OFF);
 	pcie_write(tdev, IATU_UPPER_BASE_ADDR_OFF(1), QWORD_HI(bar2_base));
 	pcie_write(tdev, IATU_LIMIT_ADDR_OFF(1),
 		   (QWORD_LO(bar2_base) + OTHER_IPS_CON_OFF - 1));
+#endif
 	pcie_write(tdev, IATU_LWR_TARGET_ADDR_OFF(1), DDR0_CON_BASE_L_ADDR);
 	pcie_write(tdev, IATU_UPPER_TARGET_ADDR_OFF(1), IPS_H_ADDR);
 	pcie_write(tdev, IATU_REGION_CTRL_2_OFF(1), REGION_ENABLE);
+#ifdef LS1046A
+	// dump
+	printk("dump ATU_CAP 1\n");
+	pcie_dump(tdev,IATU_REGION_CTRL_1_OFF(1),8);
+	//pcie_dump64(tdev,IATU_REGION_CTRL_1_OFF(1),4);
+#endif
 
 	pcie_write(tdev, IATU_REGION_CTRL_2_OFF(2), 0x0);
 	pcie_write(tdev, IATU_REGION_CTRL_1_OFF(2), 0x0);
+#ifdef LS1046A
+	pcie_write(tdev, IATU_LWR_BASE_ADDR_OFF(2),
+		   QWORD_LO(bus_addr.start) + OTHER_IPS_CON_OFF);
+	pcie_write(tdev, IATU_UPPER_BASE_ADDR_OFF(2), QWORD_HI(bus_addr.start));
+	pcie_write(tdev, IATU_LIMIT_ADDR_OFF(2),
+		   (QWORD_LO(bus_addr.start) + PCIE_MAPPING_END_OFF - 1));
+#else
 	pcie_write(tdev, IATU_LWR_BASE_ADDR_OFF(2),
 		   QWORD_LO(bar2_base) + OTHER_IPS_CON_OFF);
 	pcie_write(tdev, IATU_UPPER_BASE_ADDR_OFF(2), QWORD_HI(bar2_base));
 	pcie_write(tdev, IATU_LIMIT_ADDR_OFF(2),
 		   (QWORD_LO(bar2_base) + PCIE_MAPPING_END_OFF - 1));
+#endif
 	pcie_write(tdev, IATU_LWR_TARGET_ADDR_OFF(2), IPS_CON_BASE_L_ADDR);
 	pcie_write(tdev, IATU_UPPER_TARGET_ADDR_OFF(2), IPS_H_ADDR);
 	pcie_write(tdev, IATU_REGION_CTRL_2_OFF(2), REGION_ENABLE);
+#ifdef LS1046A
+	// dump
+	printk("dump ATU_CAP 2\n");
+	pcie_dump(tdev,IATU_REGION_CTRL_1_OFF(2),8);
+	//pcie_dump64(tdev,IATU_REGION_CTRL_1_OFF(2),4);
+#endif
 
 	/* only map first 64MiB in every slice.
 	 * map S1_ddr to bar4(region 4):
 	 * ep_ddr(0x4000000  -- tdev->len_ddr/2)
 	 * to rc(bar4+0 -- bar4+tdev->len_ddr/2-1)
 	 */
+#ifdef LS1046A
+	pcie_write(tdev, IATU_REGION_CTRL_1_OFF(6), 0x0);
+	pcie_write(tdev, IATU_LWR_BASE_ADDR_OFF(6), QWORD_LO(bus_addr4.start));
+	pcie_write(tdev, IATU_UPPER_BASE_ADDR_OFF(6), QWORD_HI(bus_addr4.start));
+	pcie_write(tdev, IATU_LIMIT_ADDR_OFF(6),
+		   (QWORD_LO(bus_addr4.start) + (bar4_len >> 1)-1));
+#else
 	pcie_write(tdev, IATU_REGION_CTRL_1_OFF(6), 0x0);
 	pcie_write(tdev, IATU_LWR_BASE_ADDR_OFF(6), QWORD_LO(bar4_base));
 	pcie_write(tdev, IATU_UPPER_BASE_ADDR_OFF(6), QWORD_HI(bar4_base));
 	pcie_write(tdev, IATU_LIMIT_ADDR_OFF(6),
 		   (QWORD_LO(bar4_base) + (bar4_len >> 1)-1));
+#endif
 	pcie_write(tdev, IATU_LWR_TARGET_ADDR_OFF(6), S0_DDR_L_ADDR);
 	pcie_write(tdev, IATU_UPPER_TARGET_ADDR_OFF(6), S0_DDR_H_ADDR);
 	pcie_write(tdev, IATU_REGION_CTRL_2_OFF(6), REGION_ENABLE);
@@ -259,14 +359,25 @@ int cb_pci_init(struct cb_tranx_t *tdev)
 	 * to rc(bar4+tdev->len_ddr/2 -- bar4+tdev->len_ddr-1)
 	 */
 	pcie_write(tdev, IATU_REGION_CTRL_1_OFF(7), 0x0);
+#ifdef LS1046A
+	pcie_write(tdev, IATU_LWR_BASE_ADDR_OFF(7),
+		   (QWORD_LO(bus_addr4.start) + (bar4_len >> 1)));
+	pcie_write(tdev, IATU_UPPER_BASE_ADDR_OFF(7), QWORD_HI(bus_addr4.start));
+	pcie_write(tdev, IATU_LIMIT_ADDR_OFF(7),
+		   (QWORD_LO(bus_addr4.start) + bar4_len - 1));
+#else
 	pcie_write(tdev, IATU_LWR_BASE_ADDR_OFF(7),
 		   (QWORD_LO(bar4_base) + (bar4_len >> 1)));
 	pcie_write(tdev, IATU_UPPER_BASE_ADDR_OFF(7), QWORD_HI(bar4_base));
 	pcie_write(tdev, IATU_LIMIT_ADDR_OFF(7),
 		   (QWORD_LO(bar4_base) + bar4_len - 1));
+#endif
 	pcie_write(tdev, IATU_LWR_TARGET_ADDR_OFF(7), S1_DDR_L_ADDR);
 	pcie_write(tdev, IATU_UPPER_TARGET_ADDR_OFF(7), S1_DDR_H_ADDR);
 	pcie_write(tdev, IATU_REGION_CTRL_2_OFF(7), REGION_ENABLE);
+#ifdef LS1046A
+	printk("var0 map \n");
+#endif
 
 	tdev->bar2_virt = ioremap_nocache(bar2_base, bar2_len);
 	if (!tdev->bar2_virt) {
@@ -275,6 +386,9 @@ int cb_pci_init(struct cb_tranx_t *tdev)
 	}
 	tdev->ccm = tdev->bar2_virt + CCM_ADDR_OFF;
 	tdev->bar2_virt_end = tdev->bar2_virt + bar2_len;
+#ifdef LS1046A
+	printk("bar2 ioremap %p\n",tdev->bar2_virt);
+#endif
 
 	for (i = 0; i < MAX_MSIX_CNT; i++)
 		tdev->msix_entries[i].entry = i;
@@ -299,6 +413,11 @@ int cb_pci_init(struct cb_tranx_t *tdev)
 			"pcie: failed to create sysfs device attributes\n");
 		goto out_unmap_bar2;
 	}
+#ifdef LS1046A
+	printk("sysfs create group\n");
+	trans_dbg(tdev, TR_ERR, "pcie: INT_POL_REF_CFG:0x%x.\n",
+		ccm_read(tdev, INT_POL_REF_CFG));
+#endif
 
 	/*
 	 * enable interrupt data path
@@ -335,6 +454,9 @@ static int switch_ddr_mapping(struct cb_tranx_t *tdev,
 {
 	unsigned int ddr_base_l;
 	resource_size_t bar2_base;
+#ifdef LS1046A
+	struct pci_bus_region bus_addr;
+#endif
 
 	/* ddr0:0x0200_0000      ddr1:0x0400_0000 */
 	if (ddr_id == 0)
@@ -345,13 +467,24 @@ static int switch_ddr_mapping(struct cb_tranx_t *tdev,
 		return -EFAULT;
 
 	bar2_base = pci_resource_start(tdev->pdev, 2);
+#ifdef LS1046A
+	pcibios_resource_to_bus(tdev->pdev->bus, &bus_addr, &tdev->pdev->resource[2]);
+#endif
 	pcie_write(tdev, IATU_REGION_CTRL_2_OFF(1), 0x0);
 	pcie_write(tdev, IATU_REGION_CTRL_1_OFF(1), 0x0);
+#ifdef LS1046A
+	pcie_write(tdev, IATU_LWR_BASE_ADDR_OFF(1),
+		QWORD_LO(bus_addr.start) + DDR_CON_OFF);
+	pcie_write(tdev, IATU_UPPER_BASE_ADDR_OFF(1), QWORD_HI(bus_addr.start));
+	pcie_write(tdev, IATU_LIMIT_ADDR_OFF(1),
+		(QWORD_LO(bus_addr.start) + OTHER_IPS_CON_OFF - 1));
+#else
 	pcie_write(tdev, IATU_LWR_BASE_ADDR_OFF(1),
 		QWORD_LO(bar2_base) + DDR_CON_OFF);
 	pcie_write(tdev, IATU_UPPER_BASE_ADDR_OFF(1), QWORD_HI(bar2_base));
 	pcie_write(tdev, IATU_LIMIT_ADDR_OFF(1),
 		(QWORD_LO(bar2_base) + OTHER_IPS_CON_OFF - 1));
+#endif
 	pcie_write(tdev, IATU_LWR_TARGET_ADDR_OFF(1), ddr_base_l);
 	pcie_write(tdev, IATU_UPPER_TARGET_ADDR_OFF(1), IPS_H_ADDR);
 	pcie_write(tdev, IATU_REGION_CTRL_2_OFF(1), REGION_ENABLE);

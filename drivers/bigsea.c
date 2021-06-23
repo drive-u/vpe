@@ -207,7 +207,7 @@ static int bigsea_release_core(struct cb_tranx_t *tdev, u32 id,
 	if (mode == ABNORM_EXIT) {
 		usleep_range(50000, 60000);
 		trans_dbg(tbigsea->tdev, TR_NOTICE,
-			"bigsea: %s, abnorm exit, wait core_%d 50ms for ip done, core status:%s\n",
+			"bigsea: [WARNING] %s, abnorm exit, wait core_%d 50ms for ip done, core status:%s\n",
 			__func__, id, core_status[tbigsea->core[id].core_status]);
 		enc_reset_core(tdev, id);
 		tdev->hw_err_flag = 0;
@@ -215,7 +215,7 @@ static int bigsea_release_core(struct cb_tranx_t *tdev, u32 id,
 
 	if (tbigsea->core[id].core_status != CHK_IRQ_FLAG) {
 		trans_dbg(tbigsea->tdev, TR_NOTICE,
-			"bigsea: %s core_%d_status:%s error\n",
+			"bigsea: [WARNING] %s core_%d_status:%s error\n",
 			__func__, id, core_status[tbigsea->core[id].core_status]);
 	}
 
@@ -418,7 +418,7 @@ static int bigsea_register_irq(struct cb_tranx_t *tdev)
 				"bigsea: %s cord_id:%d IRQ is %d!\n",
 				__func__, i, tbigsea->core[i].irq);
 			ret = request_irq(tbigsea->core[i].irq, unify_isr,
-				IRQF_SHARED|IRQF_NO_THREAD, "bigsea", (void *)tdev);
+				IRQF_SHARED, "bigsea", (void *)tdev);
 			if (ret != 0) {
 				if (ret == -EINVAL)
 					trans_dbg(tdev, TR_ERR,

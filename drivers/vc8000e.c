@@ -293,7 +293,7 @@ static int vce_release_core(struct cb_tranx_t *tdev, u32 core_id,
 	if (mode == ABNORM_EXIT) {
 		usleep_range(50000, 60000);
 		trans_dbg(tvce->tdev, TR_NOTICE,
-			"vc8000e: %s, abnorm exit, wait core_%d 50ms for ip done, core status:%s\n",
+			"vc8000e: [WARNING] %s, abnorm exit, wait core_%d 50ms for ip done, core status:%s\n",
 			__func__, id, core_status[tvce->core[id].core_status]);
 		enc_reset_core(tdev, id);
 		tdev->hw_err_flag = 0;
@@ -301,8 +301,9 @@ static int vce_release_core(struct cb_tranx_t *tdev, u32 core_id,
 
 	if (tvce->core[id].core_status != CHK_IRQ_FLAG) {
 		trans_dbg(tvce->tdev, TR_NOTICE,
-			"vc8000e: %s core_%d_status:%s error\n",
+			"vc8000e: [WARNING] %s core_%d_status:%s\n",
 			__func__, id, core_status[tvce->core[id].core_status]);
+		usleep_range(50000, 60000);
 	}
 
 	tvce->core[id].core_status = IDLE_FLAG;
@@ -419,7 +420,7 @@ int vc8000e_register_irq(struct cb_tranx_t *tdev)
 				"vc8000e: %s core:%d IRQ is %d!\n",
 				__func__, i, tvce->core[i].irq);
 			ret = request_irq(tvce->core[i].irq, unify_isr,
-					  IRQF_SHARED|IRQF_NO_THREAD, "vc8000e", (void *)tdev);
+					  IRQF_SHARED, "vc8000e", (void *)tdev);
 			if (ret == -EINVAL) {
 				trans_dbg(tdev, TR_ERR,
 					"vc8000e: bad irq:%d number or handler\n",
@@ -650,8 +651,8 @@ long vc8000e_ioctl(struct file *filp,
 		if (ret == 0) {
 			__put_user(irq_status, (u32 *)argp);
 			ret = val;
-		} else
-			__put_user(0, (u32 *)argp);
+		}
+
 		break;
 	default:
 		trans_dbg(tdev, TR_ERR,

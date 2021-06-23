@@ -1495,7 +1495,7 @@ static VpiRet h26x_enc_send_pic(VpiH26xEncCtx *enc_ctx, int poc_need,
         pthread_mutex_lock(&enc_ctx->pic_wait_list[i].pic_mutex);
         if (enc_ctx->pic_wait_list[i].state == 1) {
             p_trans = &enc_ctx->pic_wait_list[i];
-            VPILOGD("ctx %p, %d, poc %d, need_poc %d\n",
+            VPILOGV("ctx %p, %d, poc %d, need_poc %d\n",
                      enc_ctx, i, p_trans->poc, poc_need);
             if ((enc_ctx->resolution_change == 1 &&
                 (enc_ctx->pic_wait_list[i].new_flag & RESOLUTION_CHANGE_FLAG)) ||
@@ -2712,6 +2712,7 @@ VpiRet vpi_h26xe_init(VpiH26xEncCtx *enc_ctx, VpiH26xEncCfg *enc_cfg)
     VPIH26xEncCfg *vpi_h26xe_cfg = (VPIH26xEncCfg *)&enc_ctx->vpi_h26xe_cfg;
 
     for (i = 0; i < PIC_INDEX_MAX_NUMBER; i++) {
+	VPILOGE("pic index: %d, pic_info width: pic_info height: %d \n", i, enc_cfg->frame_ctx->pic_info[i].width, enc_cfg->frame_ctx->pic_info[i].height);
         if (enc_cfg->frame_ctx->pic_info[i].width == enc_cfg->lum_width_src &&
             enc_cfg->frame_ctx->pic_info[i].height == enc_cfg->lum_height_src) {
             break;
@@ -2719,6 +2720,7 @@ VpiRet vpi_h26xe_init(VpiH26xEncCtx *enc_ctx, VpiH26xEncCfg *enc_cfg)
     }
     if (i == PIC_INDEX_MAX_NUMBER) {
         VPILOGE("pp_index %d isn't avalid \n", i);
+	VPILOGE("width: %d, height: %d \n", enc_cfg->lum_width_src, enc_cfg->lum_height_src);
         ret = VPI_ERR_ENCODE;
         goto error_exit;
     }

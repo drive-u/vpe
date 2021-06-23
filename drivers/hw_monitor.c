@@ -1499,7 +1499,7 @@ int hw_monitor_register_irq(struct cb_tranx_t *tdev)
 	struct hwm_t *thwm = tdev->modules[TR_MODULE_HW_MONITOR];
 
 	trans_dbg(thwm->tdev, TR_DBG, "hwm: IRQ is %d!\n", thwm->irq);
-	ret = request_irq(thwm->irq, unify_isr, IRQF_SHARED|IRQF_NO_THREAD, "hw_monitor", tdev);
+	ret = request_irq(thwm->irq, unify_isr, IRQF_SHARED, "hw_monitor", tdev);
 	if (ret)
 		trans_dbg(tdev, TR_ERR, "hwm: request zsp irq failed.\n");
 

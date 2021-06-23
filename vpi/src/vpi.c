@@ -174,7 +174,6 @@ static VpiRet vpi_init(VpiCtx vpe_ctx, void *cfg)
         VpiH26xEncCfg *h26x_enc_cfg      = (VpiH26xEncCfg *)cfg;
         h26x_enc_cfg->priority           = vpi_hw_ctx[idx]->priority;
         h26x_enc_cfg->device             = vpi_hw_ctx[idx]->device_name;
-        h26x_enc_cfg->frame_ctx          = vpi_hw_ctx[idx]->frame;
         h26x_enc_cfg->frame_ctx->task_id = vpi_hw_ctx[idx]->task_id;
         if (h26x_enc_cfg->codec_id == CODEC_ID_HEVC) {
             strcpy(h26x_enc_cfg->module_name, "HEVCENC");
@@ -192,7 +191,6 @@ static VpiRet vpi_init(VpiCtx vpe_ctx, void *cfg)
         vp9_enc_cfg->priority     = vpi_hw_ctx[idx]->priority;
         vp9_enc_cfg->dev_name     = vpi_hw_ctx[idx]->device_name;
         vp9_enc_cfg->task_id      = vpi_hw_ctx[idx]->task_id;
-        vp9_enc_cfg->framectx     = vpi_hw_ctx[idx]->frame;
         ret = vpi_venc_vp9_init(vp9enc_ctx, vp9_enc_cfg);
         if (ret)
             return ret;
@@ -200,12 +198,10 @@ static VpiRet vpi_init(VpiCtx vpe_ctx, void *cfg)
 
     case PP_VPE:
         prc_ctx = (VpiPrcCtx *)vpe_vpi_ctx->ctx;
-        VpiPPOption *option = (VpiPPOption *)cfg;
 
         prc_ctx->ppfilter.params.device   = vpi_hw_ctx[idx]->device_name;
         prc_ctx->ppfilter.params.mem_id   = vpi_hw_ctx[idx]->task_id;
         prc_ctx->ppfilter.params.priority = vpi_hw_ctx[idx]->priority;
-        option->frame                     = vpi_hw_ctx[idx]->frame;
         if (vpi_hw_ctx[idx]) {
             ret = vpi_vprc_init(prc_ctx, cfg);
             if (ret)

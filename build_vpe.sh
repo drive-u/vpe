@@ -1,7 +1,4 @@
 #!/bin/bash
-pkg_name="vpe_package"
-vpe_out_path=`pwd`/${pkg_name}
-
 if [ ! -f "./config.mk" ]; then
 	echo "generate config.mk"
 	./configure
@@ -9,6 +6,9 @@ fi
 
 echo "lunch config.mk"
 . ./config.mk
+
+pkg_name="vpe_package_"${ARCH}
+vpe_out_path=`pwd`/${pkg_name}
 
 if [ "$1" == "clean" ]; then
 	make clean
@@ -35,9 +35,21 @@ fi
 
 ## 3. generate FFmpeg configration script
 cd ../ffmpeg
-cmd="./configure --pkg-config=true --enable-vpe "
+cmd="./configure --disable-vaapi --enable-vpe "
+
 if [ "${DEBUG}" == "y" ]; then
 	cmd=$cmd"--disable-optimizations --disable-asm --disable-stripping "
+fi
+
+if [ "${mini_ffmpeg}" == "y" ]; then
+        cmd="$cmd"\
+"--disable-sdl2 "\
+"--disable-libxcb "\
+"--disable-libxcb-shm "\
+"--disable-libxcb-xfixes "\
+"--disable-libxcb-shape "\
+"--disable-xlib "\
+"--disable-libmfx "
 fi
 
 if [ "${cross}" == "n" ]; then
@@ -46,7 +58,7 @@ if [ "${cross}" == "n" ]; then
 	cmd=$cmd"--extra-ldflags="-L/usr/lib/vpe" --extra-libs="-lvpi" "
 else
 	cmd="$cmd"\
-"--disable-vaapi "\
+"--pkg-config=true "\
 "--disable-shared "\
 "--enable-static "\
 "--cross-prefix=$CROSS_COMPILE "\

@@ -25,18 +25,16 @@ endif
 
 cross ?= n
 installpath ?=
-packagename = vpe_package
+packagename = vpe_package_${ARCH}
 
 DLL_PATH = $(installpath)/usr/lib/vpe/
 INC_PATH = $(installpath)/usr/local/include/vpe/
 PKG_PATH = $(installpath)/usr/share/pkgconfig/
-DRV_PATH = $(installpath)/lib/modules/`uname -r`/kernel/drivers/pci/pcie/solios-x/
-FRM_PATH = $(installpath)/lib/firmware/
 CFG_PATH = $(installpath)/etc/ld.so.conf.d/
 
-.PHONY: all vpi drivers tools install clean help package
+.PHONY: all drivers vpi tools install uninstall clean help package
 
-all: drivers vpi tools package
+all: vpi tools
 
 vpi:
 	@echo "VPE build step - build VPI"
@@ -48,23 +46,21 @@ else
 endif
 	make -C vpi CHECK_MEM_LEAK=y
 
-drivers:
-	make -C drivers clean
-	tar -czf drivers.tgz drivers/
-	make -C drivers all
-
 tools:
 	make -C tools
+
+drivers:
+	make -C drivers clean all install
 
 package:
 	$(shell if [ -d $(packagename)/ ]; then rm $(packagename) -rf; fi;)
 	$(shell if [ ! -d $(packagename)/ ]; then mkdir $(packagename); fi;)
-	cp firmware/ZSP_FW_RP_V*.bin $(packagename)/
 	cp sdk_libs/$(arch)/*.so $(packagename)/
 	cp vpi/libvpi.so $(packagename)/
 	$(shell if [ ! -d $(packagename)/vpe/ ]; then mkdir $(packagename)/vpe/; fi;)
 	cp $(PWD)/vpi/inc/*.h $(packagename)/vpe
 	cp build/install.sh $(packagename)/
+	tar -czf drivers.tgz drivers/
 	mv drivers.tgz $(packagename)/
 	cp tools/srmtool $(packagename)/
 	cp tools/*.sh $(packagename)/
@@ -81,37 +77,17 @@ ifeq ($(installpath),)
 	@ERROR @echo "Please use ./configure --installpath to set target VPE installation path."
 endif
 endif
-	$(shell if [ ! -d $(DLL_PATH) ]; then mkdir $(DLL_PATH) -p; fi;)
+	$(shell if [ ! -d $(DLL_PATH) ]; then mkdir $(DLL_PATH) -p; touch new; fi;)
 	$(shell if [ ! -d $(INC_PATH) ]; then mkdir $(INC_PATH) -p; fi;)
 	$(shell if [ ! -d $(PKG_PATH) ]; then mkdir $(PKG_PATH) -p; fi;)
-	$(shell if [ ! -d $(DRV_PATH) ]; then mkdir $(DRV_PATH) -p; fi;)
-	$(shell if [ ! -d $(FRM_PATH) ]; then mkdir $(FRM_PATH) -p; fi;)
 	$(shell if [ ! -d $(CFG_PATH) ]; then mkdir $(CFG_PATH) -p; fi;)
-
 	$(shell cp sdk_libs/$(arch)/*.so $(DLL_PATH) )
 	$(shell cp vpi/libvpi.so $(DLL_PATH) )
-
 	$(shell cp vpi/inc/*.h $(INC_PATH) )
 	$(shell cp build/libvpi.pc $(PKG_PATH) )
-	$(shell rm $(DRV_PATH) -rf )
-	$(shell mkdir -p $(DRV_PATH) )
-	$(shell cp drivers/transcoder_pcie.ko $(DRV_PATH) )
-	$(shell cp firmware/ZSP_FW_RP_V*.bin $(FRM_PATH)/transcoder_zsp_fw.bin )
 	@echo "/usr/lib/vpe" > $(CFG_PATH)/vpe-$(arch).conf
-	@echo VPE libs, fw, .h were installed $(installpath)
-
 ifeq ($(cross),n)
-ifneq ($(shell lsmod | grep transcoder_pcie), )
-	@echo "VPE Driver is already installed, now remove"
-	$(shell rmmod transcoder_pcie )
-else
-	$(shell /sbin/ldconfig )
-	$(shell depmod )
-endif
-	$(shell insmod drivers/transcoder_pcie.ko )
-	@echo "VPE Driver: $(shell lsmod | grep transcoder_pcie)"
-else
-	@echo "cross compiling, skip driver installation"
+	$(shell if [ -f new ]; then /sbin/ldconfig; depmod; rm new; fi;)
 endif
 	@echo VPE installation was finished!
 
@@ -119,25 +95,18 @@ uninstall:
 	@echo "VPE build step - uninstall"
 	$(shell if [ -d $(DLL_PATH) ]; then rm $(DLL_PATH) -rf; fi; )
 	$(shell if [ -d $(INC_PATH) ]; then rm $(INC_PATH) -rf; fi; )
-	$(shell rm $(FRM_PATH)/transcoder_zsp_fw.bin )
-	$(shell rm $(PKG_PATH)/libvpi.pc )
-	$(shell rm $(CFG_PATH)/vpe-$(ARCH).conf )
-	$(shell rm $(DRV_PATH) -rf )
-
+	$(shell rm $(PKG_PATH)/libvpi.pc $(CFG_PATH)/vpe-$(arch).conf)
 ifeq ($(cross),n)
-	$(shell /sbin/ldconfig )
-	$(shell rmmod transcoder_pcie )
-	$(shell depmod )
+	$(shell /sbin/ldconfig; depmod )
 endif
-	## VPE uninstallation was finished!
+	@echo VPE uninstallation was finished!
 
 clean:
 	make -C vpi clean
-	make -C drivers clean
 	$(shell if [ -d $(packagename)/ ]; then rm $(packagename)/ -rf; fi;)
 
 help:
-	@echo "  o make                - make VPI library and pcie driver"
-	@echo "  o make clean          - cleaN VPE"
+	@echo "  o make                - make VPI library"
+	@echo "  o make clean          - clean VPE"
 	@echo "  o make install        - install VPE"
 	@echo "  o make: uninstall      - uninstall VPE"

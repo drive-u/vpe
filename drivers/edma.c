@@ -1708,7 +1708,7 @@ static int edma_register_irq(struct cb_tranx_t *tdev)
 
 	/* request edma irq. */
 	ret = request_irq(tdev->msix_entries[0].vector, edma_isr,
-			IRQF_SHARED|IRQF_NO_THREAD, "tedma", tdev);
+			IRQF_SHARED, "tedma", tdev);
 	if (ret)
 		trans_dbg(tdev, TR_ERR, "edma: request edma irq failed.\n");
 
@@ -2198,9 +2198,11 @@ long edma_ioctl(struct file *filp, unsigned int cmd,
 		} else if (ret < 0)
 			trans_dbg(tdev, TR_NOTICE,
 				"edma: tranx to tcache terminated, c:%d\n", c);
-		if (ret <= 0)
-			__put_user(LT_UNDONE, (unsigned int *)argp);
-		else
+
+		if (ret <= 0) {
+			if (ret  != -ERESTARTSYS)
+				__put_user(LT_UNDONE, (unsigned int *)argp);
+		} else
 			__put_user(LT_DONE, (unsigned int *)argp);
 		if (ret == -ERESTARTSYS)
 			return ret;

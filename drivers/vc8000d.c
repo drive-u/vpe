@@ -891,7 +891,7 @@ static void vc8000d_release_core(struct vc8000d_t *tvcd,
 	if (mode == ABNORM_EXIT) {
 		usleep_range(50000, 60000);
 		trans_dbg(tvcd->tdev, TR_NOTICE,
-			"vc8000d: %s, abnorm exit, wait core_%d 50ms for ip done, core status:%s\n",
+			"vc8000d: [WARNING] %s, abnorm exit, wait core_%d 50ms for ip done, core status:%s\n",
 			__func__, id, core_status[tvcd->core[id].core_status]);
 		if (id == 0) {
 			tedma->tc_info[0].status = TC_EDMA_DONE; /* done flag */
@@ -911,8 +911,9 @@ static void vc8000d_release_core(struct vc8000d_t *tvcd,
 
 	if (tvcd->core[id].core_status != CHK_IRQ_FLAG) {
 		trans_dbg(tvcd->tdev, TR_NOTICE,
-			"vc8000d: %s, core_%d_status:%s",
+			"vc8000d: [WARNING] %s, core_%d_status:%s",
 			__func__, id, core_status[tvcd->core[id].core_status]);
+		usleep_range(50000, 60000);
 	}
 	tvcd->core[id].core_status = IDLE_FLAG;
 	tvcd->core[id].idle_cnt++;
@@ -1312,7 +1313,7 @@ int vc8000d_register_irq(struct cb_tranx_t *tdev)
 				  i, tvcd->core[i].irq);
 
 			result = request_irq(tvcd->core[i].irq, unify_isr,
-					IRQF_SHARED|IRQF_NO_THREAD, "vc8000d", (void *)tdev);
+					IRQF_SHARED, "vc8000d", (void *)tdev);
 			if (result != 0) {
 				if (result == -EINVAL) {
 					trans_dbg(tdev, TR_ERR,
